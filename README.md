@@ -1,1 +1,2 @@
 # EasyGames
+## PLEASE REFER TO THE MASTER BRANCH. 
