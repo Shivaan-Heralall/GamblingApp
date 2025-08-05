@@ -1,0 +1,264 @@
+﻿@model GamblingApp.Models.ViewModels
+@{
+    ViewData["Title"] = "Gambling Client Management";
+}
+
+<div class="row">
+    <div class="col-12">
+        <h1>Client Management System</h1>
+
+        @if (TempData["Success"] != null)
+        {
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                @TempData["Success"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        }
+
+        @if (TempData["Error"] != null)
+        {
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                @TempData["Error"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        }
+    </div>
+</div>
+
+
+<div class="card mb-4">
+    <div class="card-header">
+        <h5>Filter And Search</h5>
+    </div>
+    <div class="card-body">
+        <form method="get" asp-action="Index">
+            <input type="hidden" name="selectedClientId" value="@Model.SelectedClientId" />
+
+            <div class="row">
+                <div class="col-md-3">
+                    <label for="nameFilter" class="form-label">Name/Surname:</label>
+                    <input type="text" class="form-control" name="nameFilter" value="@Model.NameFilter" placeholder="Search by name" />
+                </div>
+                <div class="col-md-2">
+                    <label for="minBalance" class="form-label">Min Balance:</label>
+                    <input type="number" step="0.01" class="form-control" name="minBalance" value="@Model.MinBalance" />
+                </div>
+                <div class="col-md-2">
+                    <label for="maxBalance" class="form-label">Max Balance:</label>
+                    <input type="number" step="0.01" class="form-control" name="maxBalance" value="@Model.MaxBalance" />
+                </div>
+                <div class="col-md-2">
+                    <label for="orderBy" class="form-label">Order By:</label>
+                    <select class="form-select" name="orderBy">
+                        <option value="Name" selected="@(Model.OrderBy == "Name")">Name</option>
+                        <option value="Surname" selected="@(Model.OrderBy == "Surname")">Surname</option>
+                        <option value="Balance" selected="@(Model.OrderBy == "Balance")">Balance</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Order:</label>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="orderDescending" value="true" @(Model.OrderDescending ? "checked" :"") />
+                        <label class="form-check-label">Descending</label>
+                    </div>
+                </div>
+                <div class="col-md-1">
+                    <label class="form-label">&nbsp;</label>
+                    <button type="submit" class="btn btn-primary d-block">Filter</button>
+                </div>
+            </div>
+
+            @if (Model.SelectedClientId.HasValue)
+            {
+                <div class="row mt-3">
+                    <div class="col-md-4">
+                        <label for="commentFilter" class="form-label">Transaction Comment:</label>
+                        <input type="text" class="form-control" name="commentFilter" value="@Model.CommentFilter" placeholder="Filter by comment" />
+                    </div>
+                </div>
+            }
+        </form>
+    </div>
+</div>
+
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5>Clients (@Model.Clients.Count)</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Surname</th>
+                                <th>Balance</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var client in Model.Clients)
+                            {
+                                <tr class="@(Model.SelectedClientId == client.ClientId ? "table-active" : "")">
+                                    <td>@client.Name</td>
+                                    <td>@client.Surname</td>
+                                    <td>
+                                        <span class="badge @(client.ClientBalance >= 0 ? "bg-success" : "bg-danger")">
+                                            R @client.ClientBalance.ToString("N2")
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <a href="@Url.Action("Index", new { selectedClientId = client.ClientId, nameFilter = Model.NameFilter, minBalance = Model.MinBalance, maxBalance = Model.MaxBalance, orderBy = Model.OrderBy, orderDescending = Model.OrderDescending })"
+                                           class="btn btn-sm btn-outline-primary">
+                                            View Transactions
+                                        </a>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <div class="col-md-6">
+        @if (Model.SelectedClient != null)
+        {
+            <div class="card">
+                <div class="card-header">
+                    <h5>Transactions for @Model.SelectedClient.Name</h5>
+                    <small class="text-muted">Current Balance: <span class="badge @(Model.SelectedClient.ClientBalance >= 0 ? "bg-success" : "bg-danger")">R @Model.SelectedClient.ClientBalance.ToString("N2")</span></small>
+                </div>
+                <div class="card-body">
+                  
+                    <div class="border rounded p-3 mb-3 bg-light">
+                        <h6>Add New Transaction</h6>
+                        <form method="post" asp-action="AddTransaction">
+                            <input type="hidden" name="NewTransaction.ClientID" value="@Model.SelectedClientId" />
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <select class="form-select form-select-sm" name="NewTransaction.TransactionTypeID" required>
+                                        <option value="">Select Type</option>
+                                        @foreach (var type in Model.TransactionTypes)
+                                        {
+                                            <option value="@type.TransactionTypeId">@type.TransactionTypeName</option>
+                                        }
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <input type="number" step="0.01" class="form-control form-control-sm" name="NewTransaction.Amount" placeholder="Amount" required />
+                                </div>
+                                <div class="col-md-3">
+                                    <input type="text" class="form-control form-control-sm" name="NewTransaction.Comment" placeholder="Comment" maxlength="100" />
+                                </div>
+                                <div class="col-md-2">
+                                    <button type="submit" class="btn btn-success btn-sm">Add</button>
+                                </div>
+                            </div>
+                        </form>
+                        <small class="text-muted">Note: For Credit transactions, use negative amounts (e.g., -500)</small>
+                    </div>
+
+                   
+                    <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                        <table class="table table-sm">
+                            <thead class="sticky-top bg-white">
+                                <tr>
+                                    <th>Type</th>
+                                    <th>Amount</th>
+                                    <th>Comment</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var transaction in Model.Transactions)
+                                {
+                                    <tr>
+                                        <td>
+                                            <span class="badge @(transaction.TransactionType?.TransactionTypeName == "Debit" ? "bg-success" : "bg-danger")">
+                                                @transaction.TransactionType?.TransactionTypeName
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <strong class="@(transaction.Amount >= 0 ? "text-success" : "text-danger")">
+                                                R @transaction.Amount.ToString("N2")
+                                            </strong>
+                                        </td>
+                                        <td>
+                                            <input type="text" class="form-control form-control-sm comment-input"
+                                                   value="@transaction.Comment"
+                                                   data-transaction-id="@transaction.TransactionId"
+                                                   maxlength="100" />
+                                        </td>
+                                        <td>
+                                            <button class="btn btn-sm btn-outline-primary save-comment"
+                                                    data-transaction-id="@transaction.TransactionId">
+                                                Save
+                                            </button>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="card">
+                <div class="card-body text-center text-muted">
+                    <h5>Select a client to view transactions</h5>
+                    <p>Choose a client from the list on the left to see their transaction history.</p>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            
+            $('.save-comment').click(function() {
+                var transactionId = $(this).data('transaction-id');
+                var comment = $('input[data-transaction-id="' + transactionId + '"]').val();
+                var button = $(this);
+
+                button.prop('disabled', true).text('Saving...');
+
+                $.post('@Url.Action("UpdateComment")', {
+                    transactionId: transactionId,
+                    comment: comment
+                })
+                .done(function(data) {
+                    if (data.success) {
+                        button.removeClass('btn-outline-primary').addClass('btn-success').text('Saved!');
+                        setTimeout(function() {
+                            button.removeClass('btn-success').addClass('btn-outline-primary').text('Save');
+                        }, 2000);
+                    }
+                })
+                .fail(function() {
+                    alert('Failed to update comment');
+                })
+                .always(function() {
+                    button.prop('disabled', false);
+                });
+            });
+
+           
+            $('.comment-input').keypress(function(e) {
+                if (e.which == 13) {
+                    var transactionId = $(this).data('transaction-id');
+                    $('button[data-transaction-id="' + transactionId + '"]').click();
+                }
+            });
+        });
+    </script>
+}
