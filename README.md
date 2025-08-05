@@ -1,2 +1,2 @@
-# EasyGames
+# Gambling App
 ## PLEASE REFER TO THE MASTER BRANCH. 
